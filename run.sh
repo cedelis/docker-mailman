@@ -32,6 +32,7 @@ fi
 # Set debconf values and reconfigure Exim and Mailman. For some reason, dpkg-reconfigure exim4-config does not seem to work.
 echo -n "Setting up Exim..."
 {
+	apt-get update
 	apt-get remove --purge -y exim4 exim4-base exim4-config exim4-daemon-light
 	debconf-set-selections /exim4-config.cfg
 	echo ${EMAIL_FQDN} > /etc/mailname
