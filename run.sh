@@ -60,8 +60,9 @@ echo "MTA = None" >> $mailmancfg
 echo 'DELIVERY_MODULE = "SMTPDirect"' >> $mailmancfg
 echo 'SMTP_MAX_RCPTS = 500' >> $mailmancfg
 echo 'MAX_DELIVERY_THREADS = 0' >> $mailmancfg
-echo 'SMTPHOST = "localhost"' >> $mailmancfg
-echo 'SMTPPORT = 0' >> $mailmancfg
+echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
+echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
+echo 'OWNERS_CAN_DELETE_THEIR_OWN_LISTS = Yes' >> $mailmancfg
 
 # remove mm_cfg.pyc, to ensure the new values are picked up
 rm -f "${mailmancfg}c"

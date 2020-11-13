@@ -4,6 +4,8 @@ MAINTAINER Fer Uria <fauria@gmail.com>
 ENV URL_FQDN lists.example.com
 ENV EMAIL_FQDN lists.example.com
 ENV MASTER_PASSWORD example
+ENV SMTPHOST localhost
+ENV SMTPPORT 0
 ENV LIST_LANGUAGE_CODE en
 ENV LIST_LANGUAGE_NAME English
 ENV LIST_ADMIN admin@lists.example.com
