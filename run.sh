@@ -3,6 +3,16 @@
 # See: http://www.exim.org/howto/mailman21.html
 # and: https://help.ubuntu.com/community/Mailman
 # and: https://debian-administration.org/article/718/DKIM-signing_outgoing_mail_with_exim4
+
+# read ENV variables from mountpoint (more secure that way):
+URL_FQDN=`cat /mailman-env/URL_FQDN`
+EMAIL_FQDN=`cat /mailman-env/EMAIL_FQDN`
+MASTER_PASSWORD=`cat /mailman-env/MASTER_PASSWORD`
+LIST_ADMIN=`cat /mailman-env/LIST_ADMIN`
+DEBUG_CONTAINER=`cat /mailman-env/DEBUG_CONTAINER`
+SMTPHOST=`cat /mailman-env/SMTPHOST`
+SMTPPORT=`cat /mailman-env/SMTPPORT`
+
 if [ $DEBUG_CONTAINER == 'true' ]; then
 	outfile='/dev/console'
 else
@@ -76,19 +86,19 @@ echo -n "Initializing mailing lists..."
 echo ' Done.'
 
 # Addaliases and update them:
-cat << EOA >> /etc/aliases
-mailman:              "|/var/lib/mailman/mail/mailman post mailman"
-mailman-admin:        "|/var/lib/mailman/mail/mailman admin mailman"
-mailman-bounces:      "|/var/lib/mailman/mail/mailman bounces mailman"
-mailman-confirm:      "|/var/lib/mailman/mail/mailman confirm mailman"
-mailman-join:         "|/var/lib/mailman/mail/mailman join mailman"
-mailman-leave:        "|/var/lib/mailman/mail/mailman leave mailman"
-mailman-owner:        "|/var/lib/mailman/mail/mailman owner mailman"
-mailman-request:      "|/var/lib/mailman/mail/mailman request mailman"
-mailman-subscribe:    "|/var/lib/mailman/mail/mailman subscribe mailman"
-mailman-unsubscribe:  "|/var/lib/mailman/mail/mailman unsubscribe mailman"
-EOA
-/usr/bin/newaliases
+#cat << EOA >> /etc/aliases
+#mailman:              "|/var/lib/mailman/mail/mailman post mailman"
+#mailman-admin:        "|/var/lib/mailman/mail/mailman admin mailman"
+#mailman-bounces:      "|/var/lib/mailman/mail/mailman bounces mailman"
+#mailman-confirm:      "|/var/lib/mailman/mail/mailman confirm mailman"
+#mailman-join:         "|/var/lib/mailman/mail/mailman join mailman"
+#mailman-leave:        "|/var/lib/mailman/mail/mailman leave mailman"
+#mailman-owner:        "|/var/lib/mailman/mail/mailman owner mailman"
+#mailman-request:      "|/var/lib/mailman/mail/mailman request mailman"
+#mailman-subscribe:    "|/var/lib/mailman/mail/mailman subscribe mailman"
+#mailman-unsubscribe:  "|/var/lib/mailman/mail/mailman unsubscribe mailman"
+#EOA
+#/usr/bin/newaliases
 
 echo -n "Setting up Apache web server..."
 {
