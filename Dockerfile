@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 MAINTAINER Fer Uria <fauria@gmail.com>
 
 ENV URL_FQDN lists.example.com
@@ -10,6 +10,8 @@ ENV LIST_LANGUAGE_CODE en
 ENV LIST_LANGUAGE_NAME English
 ENV LIST_ADMIN admin@lists.example.com
 ENV DEBUG_CONTAINER false
+ENV SMTP_AUTH False
+ENV SMTP_USE_TLS False
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN true
@@ -24,12 +26,14 @@ COPY 04_exim4-config_mailman /etc/exim4/conf.d/main/
 COPY 40_exim4-config_mailman /etc/exim4/conf.d/transport/
 COPY 101_exim4-config_mailman /etc/exim4/conf.d/router/
 COPY mailman.conf /etc/apache2/sites-available/
+COPY etc_initd_mailman /etc/init.d/mailman
 
 COPY exim4-config.cfg /
 COPY mailman-config.cfg /
 COPY run.sh /
 
 RUN chmod +x /run.sh
+RUN chmod +x /etc/init.d/mailman
 
 VOLUME /var/log/mailman
 VOLUME /var/log/exim4

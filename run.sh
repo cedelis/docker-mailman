@@ -74,6 +74,16 @@ echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
 echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
 echo 'OWNERS_CAN_DELETE_THEIR_OWN_LISTS = Yes' >> $mailmancfg
 
+# Campus Relay settings
+SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
+SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
+SMTP_USER=`cat /mailman-env/SMTP_USER`
+SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+echo "SMTP_AUTH = ${SMTP_AUTH}" >> $mailmancfg
+echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg 
+echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
+echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
+
 # remove mm_cfg.pyc, to ensure the new values are picked up
 rm -f "${mailmancfg}c"
 rm -f "/var/lib/mailman/Mailman/mm_cfg.pyc"
@@ -123,7 +133,7 @@ ts=$(date +%Y%m%d)
 echo -n "Fixing permissons and finishing setup..."
 {
 	update-exim4.conf
-	/usr/lib/mailman/bin/check_perms -f
+	#/usr/lib/mailman/bin/check_perms -f
 } &>$outfile
 echo ' Done.'
 
