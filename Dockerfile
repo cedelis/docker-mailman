@@ -23,6 +23,7 @@ RUN apt-get install -y mailman exim4 apache2
 
 COPY 00_local_macros /etc/exim4/conf.d/main/
 COPY 04_exim4-config_mailman /etc/exim4/conf.d/main/
+COPY 30_exim4-config_auth /etc/exim4/conf.d/auth/
 COPY 40_exim4-config_mailman /etc/exim4/conf.d/transport/
 COPY 101_exim4-config_mailman /etc/exim4/conf.d/router/
 COPY mailman.conf /etc/apache2/sites-available/
@@ -30,6 +31,7 @@ COPY etc_initd_mailman /etc/init.d/mailman
 
 COPY exim4-config.cfg /
 COPY mailman-config.cfg /
+COPY exim-adduser /
 COPY run.sh /
 
 RUN chmod +x /run.sh
@@ -41,6 +43,9 @@ VOLUME /var/log/apache2
 VOLUME /var/lib/mailman/archives
 VOLUME /var/lib/mailman/lists
 VOLUME /etc/exim4/tls.d
+VOLUME /etc/exim4/exim.crt
+VOLUME /etc/exim4/exim.key
+VOLUME /etc/exim4/passwd
 
 EXPOSE 25 80
 

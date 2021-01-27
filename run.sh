@@ -12,6 +12,13 @@ LIST_ADMIN=`cat /mailman-env/LIST_ADMIN`
 DEBUG_CONTAINER=`cat /mailman-env/DEBUG_CONTAINER`
 SMTPHOST=`cat /mailman-env/SMTPHOST`
 SMTPPORT=`cat /mailman-env/SMTPPORT`
+SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
+SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
+SMTP_USER=`cat /mailman-env/SMTP_USER`
+SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+EXIM4_SMARTHOST=`cat /mailman-env/EXIM4_SMARTHOST`
+EXIM4_OTHER_HOSTNAMES=`cat /mailman-env/EXIM4_OTHER_HOSTNAMES`
+EXIM4_LOCAL_INTERFACES=`cat /mailman-env/EXIM4_LOCAL_INTERFACES`
 
 if [ $DEBUG_CONTAINER == 'true' ]; then
 	outfile='/dev/console'
@@ -38,15 +45,26 @@ if [ $LIST_LANGUAGE_CODE != "en" ]; then
 	/bin/sed -i "s/default_server_language\ select\ en\ (English)/default_server_language\ select\ ${LIST_LANGUAGE_CODE}\ (${LIST_LANGUAGE_NAME})/" /mailman-config.cfg
 	/bin/sed -i "/^mailman mailman\/site_languages/ s/$/\,\ ${LIST_LANGUAGE_CODE}\ \(${LIST_LANGUAGE_NAME}\)/" /mailman-config.cfg
 fi
+# set up campus relay (which sends outoing email via smarthost to our Cloud Emailer)
+/bin/sed -i "s/dc_other_hostnames string/dc_other_hostnames string ${EXIM4_OTHER_HOSTNAMES}/" /exim4-config.cfg
+/bin/sed -i "s/dc_smarthost string/dc_smarthost string ${EXIM4_SMARTHOST}/" /exim4-config.cfg
+/bin/sed -i "s/dc_local_interfaces string/dc_local_interfaces string ${EXIM4_LOCAL_INTERFACES}/" /exim4-config.cfg
 
 # Set debconf values and reconfigure Exim and Mailman. For some reason, dpkg-reconfigure exim4-config does not seem to work.
 echo -n "Setting up Exim..."
 {
 	apt-get update
 	apt-get remove --purge -y exim4 exim4-base exim4-config exim4-daemon-light
+
 	debconf-set-selections /exim4-config.cfg
 	echo ${EMAIL_FQDN} > /etc/mailname
-	apt-get install -y exim4
+	apt-get install -y exim4-daemon-heavy
+
+	# smarthost credentials
+	cat << EOA >> /etc/exim4/passwd.client
+${SMTPHOST}:${SMTP_USER}:${SMTP_PASSWD}
+EOA
+
 } &>$outfile
 echo ' Done.'
 
@@ -74,11 +92,7 @@ echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
 echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
 echo 'OWNERS_CAN_DELETE_THEIR_OWN_LISTS = Yes' >> $mailmancfg
 
-# Campus Relay settings
-SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
-SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
-SMTP_USER=`cat /mailman-env/SMTP_USER`
-SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+# Outgoing mail Cloud emailer
 echo "SMTP_AUTH = ${SMTP_AUTH}" >> $mailmancfg
 echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg 
 echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
@@ -110,7 +124,7 @@ echo ' Done.'
 #EOA
 #/usr/bin/newaliases
 
-echo -n "Setting up Apache web server..."
+#cho -n "Setting up Apache web server..."
 {
 	a2enmod cgi
 	a2ensite mailman.conf
