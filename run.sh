@@ -83,6 +83,10 @@ echo ' Done.'
 /bin/sed -i "s/DEFAULT_URL_HOST.*\=.*/DEFAULT_URL_HOST\ \=\ \'${URL_FQDN}\'/" $mailmancfg
 /bin/sed -i "s/DEFAULT_SERVER_LANGUAGE.*\=.*/DEFAULT_SERVER_LANGUAGE\ \=\ \'${LIST_LANGUAGE_CODE}\'/" $mailmancfg
 
+# important! make sure it's SSL
+/bin/sed -i "s/DEFAULT_URL_PATTERN.*\=.*/DEFAULT_URL_PATTERN\ \=\ \'https://%s/cgi-bin/mailman/\'/" $mailmancfg
+
+
 # Add some directives to Mailman config:
 echo "MTA = None" >> $mailmancfg
 echo 'DELIVERY_MODULE = "SMTPDirect"' >> $mailmancfg
