@@ -39,6 +39,7 @@ RUN chmod +x /etc/init.d/mailman
 
 VOLUME /var/log/mailman
 VOLUME /var/log/exim4
+VOLUME /var/spool/exim4
 VOLUME /var/log/apache2
 VOLUME /var/lib/mailman/archives
 VOLUME /var/lib/mailman/lists

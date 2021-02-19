@@ -84,7 +84,7 @@ echo ' Done.'
 /bin/sed -i "s/DEFAULT_SERVER_LANGUAGE.*\=.*/DEFAULT_SERVER_LANGUAGE\ \=\ \'${LIST_LANGUAGE_CODE}\'/" $mailmancfg
 
 # important! make sure it's SSL
-/bin/sed -i "s/DEFAULT_URL_PATTERN.*\=.*/DEFAULT_URL_PATTERN\ \=\ \'https://%s/cgi-bin/mailman/\'/" $mailmancfg
+/bin/sed -i "s/DEFAULT_URL_PATTERN.*\=.*/DEFAULT_URL_PATTERN\ \=\ \'https:\/\/%s\/cgi-bin\/mailman\/\'/" $mailmancfg
 
 
 # Add some directives to Mailman config:
@@ -106,12 +106,13 @@ echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
 rm -f "${mailmancfg}c"
 rm -f "/var/lib/mailman/Mailman/mm_cfg.pyc"
 
-echo -n "Initializing mailing lists..."
-{
-	/usr/sbin/mmsitepass ${MASTER_PASSWORD}
-	/usr/sbin/newlist -q -l ${LIST_LANGUAGE_CODE} mailman ${LIST_ADMIN} ${MASTER_PASSWORD}
-} &>$outfile
-echo ' Done.'
+###### NOT necessary since we are assuming mailman lists have already been established
+######echo -n "Initializing mailing lists..."
+######{
+	######/usr/sbin/mmsitepass ${MASTER_PASSWORD}
+	######/usr/sbin/newlist -q -l ${LIST_LANGUAGE_CODE} mailman ${LIST_ADMIN} ${MASTER_PASSWORD}
+######} &>$outfile
+######echo ' Done.'
 
 # Addaliases and update them:
 #cat << EOA >> /etc/aliases
