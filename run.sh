@@ -60,6 +60,9 @@ echo -n "Setting up Exim..."
 	echo ${EMAIL_FQDN} > /etc/mailname
 	apt-get install -y exim4-daemon-heavy
 
+        # this is so we can run rt-mailgate perl script
+        apt-get install -y libtest-lwp-useragent-perl
+
 	# smarthost credentials
 	cat << EOA >> /etc/exim4/passwd.client
 ${SMTPHOST}:${SMTP_USER}:${SMTP_PASSWD}
@@ -78,6 +81,7 @@ echo ' Done.'
 # Replace default hostnames with runtime values:
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/00_local_macros
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/04_exim4-config_mailman
+/bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/04_exim4-config_rt
 /bin/sed -i "s/lists\.example\.com/${URL_FQDN}/" /etc/apache2/sites-available/mailman.conf
 /bin/sed -i "s/DEFAULT_EMAIL_HOST.*\=.*/DEFAULT_EMAIL_HOST\ \=\ \'${EMAIL_FQDN}\'/" $mailmancfg
 /bin/sed -i "s/DEFAULT_URL_HOST.*\=.*/DEFAULT_URL_HOST\ \=\ \'${URL_FQDN}\'/" $mailmancfg
