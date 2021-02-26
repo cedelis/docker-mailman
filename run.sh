@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-set -x # TODO: remove before going into PROD
 
 # (Originally) By Fer Uría <fauria@gmail.com>
 # Heavily modified by Chris Delis <cedelis@uillinois.edu>
