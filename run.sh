@@ -1,5 +1,9 @@
 #!/bin/bash
-# By Fer Uría <fauria@gmail.com>
+set -e
+set -x # TODO: remove before going into PROD
+
+# (Originally) By Fer Uría <fauria@gmail.com>
+# Heavily modified by Chris Delis <cedelis@uillinois.edu>
 # See: http://www.exim.org/howto/mailman21.html
 # and: https://help.ubuntu.com/community/Mailman
 # and: https://debian-administration.org/article/718/DKIM-signing_outgoing_mail_with_exim4
@@ -20,64 +24,25 @@ EXIM4_SMARTHOST=`cat /mailman-env/EXIM4_SMARTHOST`
 EXIM4_OTHER_HOSTNAMES=`cat /mailman-env/EXIM4_OTHER_HOSTNAMES`
 EXIM4_LOCAL_INTERFACES=`cat /mailman-env/EXIM4_LOCAL_INTERFACES`
 
-if [ $DEBUG_CONTAINER == 'true' ]; then
-	outfile='/dev/console'
-else
-	outfile='/dev/null'
-fi
-
-mailmancfg='/etc/mailman/mm_cfg.py'
-
-cat << EOB
-
-    ***********************************************
-    *                                             *
-    *   Docker image: fauria/mailman              *
-    *   https://github.com/fauria/docker-mailman  *
-    *                                             *
-    ***********************************************
-
-EOB
-
-# Fill debconf files with proper runtime values:
-/bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /exim4-config.cfg
-if [ $LIST_LANGUAGE_CODE != "en" ]; then
-	/bin/sed -i "s/default_server_language\ select\ en\ (English)/default_server_language\ select\ ${LIST_LANGUAGE_CODE}\ (${LIST_LANGUAGE_NAME})/" /mailman-config.cfg
-	/bin/sed -i "/^mailman mailman\/site_languages/ s/$/\,\ ${LIST_LANGUAGE_CODE}\ \(${LIST_LANGUAGE_NAME}\)/" /mailman-config.cfg
-fi
-# set up campus relay (which sends outoing email via smarthost to our Cloud Emailer)
-/bin/sed -i "s/dc_other_hostnames string/dc_other_hostnames string ${EXIM4_OTHER_HOSTNAMES}/" /exim4-config.cfg
-/bin/sed -i "s/dc_smarthost string/dc_smarthost string ${EXIM4_SMARTHOST}/" /exim4-config.cfg
-/bin/sed -i "s/dc_local_interfaces string/dc_local_interfaces string ${EXIM4_LOCAL_INTERFACES}/" /exim4-config.cfg
-
 # Set debconf values and reconfigure Exim and Mailman. For some reason, dpkg-reconfigure exim4-config does not seem to work.
-echo -n "Setting up Exim..."
-{
-	apt-get update
-	apt-get remove --purge -y exim4 exim4-base exim4-config exim4-daemon-light
+opts=(
+  dc_local_interfaces "${EXIM4_LOCAL_INTERFACES}"
+  dc_other_hostnames "${EXIM4_OTHER_HOSTNAMES}"
+  dc_relay_nets ''
+  dc_use_split_config 'true'
+  dc_eximconfig_configtype 'smarthost'
+  dc_smarthost "${SMTPHOST}::${SMTPPORT}"
+)
+/set-exim4-update-conf "${opts[@]}"
+echo "mailname='${EMAIL_FQDN}'" >> /etc/exim4/update-exim4.conf.conf
 
-	debconf-set-selections /exim4-config.cfg
-	echo ${EMAIL_FQDN} > /etc/mailname
-	apt-get install -y exim4-daemon-heavy
+echo "${SMTPHOST}:$SMTP_USER:$SMTP_PASSWD" > /etc/exim4/passwd.client
+echo ${EMAIL_FQDN} > /etc/mailname
 
-        # this is so we can run rt-mailgate perl script
-        apt-get install -y libtest-lwp-useragent-perl
+update-exim4.conf
 
-	# smarthost credentials
-	cat << EOA >> /etc/exim4/passwd.client
-${SMTPHOST}:${SMTP_USER}:${SMTP_PASSWD}
-EOA
-
-} &>$outfile
-echo ' Done.'
-
-echo -n "Setting up Mailman..."
-{
-	debconf-set-selections /mailman-config.cfg
-	dpkg-reconfigure mailman
-} &>$outfile
-echo ' Done.'
-
+echo "Setting up Mailman..."
+mailmancfg='/etc/mailman/mm_cfg.py'
 # Replace default hostnames with runtime values:
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/00_local_macros
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/04_exim4-config_mailman
@@ -89,7 +54,6 @@ echo ' Done.'
 
 # important! make sure it's SSL
 /bin/sed -i "s/DEFAULT_URL_PATTERN.*\=.*/DEFAULT_URL_PATTERN\ \=\ \'https:\/\/%s\/cgi-bin\/mailman\/\'/" $mailmancfg
-
 
 # Add some directives to Mailman config:
 echo "MTA = None" >> $mailmancfg
@@ -106,17 +70,16 @@ echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg
 echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
 echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
 
+debconf-set-selections /mailman-config.cfg
+dpkg-reconfigure mailman
+
 # remove mm_cfg.pyc, to ensure the new values are picked up
 rm -f "${mailmancfg}c"
 rm -f "/var/lib/mailman/Mailman/mm_cfg.pyc"
 
 ###### NOT necessary since we are assuming mailman lists have already been established
-######echo -n "Initializing mailing lists..."
-######{
-	######/usr/sbin/mmsitepass ${MASTER_PASSWORD}
-	######/usr/sbin/newlist -q -l ${LIST_LANGUAGE_CODE} mailman ${LIST_ADMIN} ${MASTER_PASSWORD}
-######} &>$outfile
-######echo ' Done.'
+######/usr/sbin/mmsitepass ${MASTER_PASSWORD}
+######/usr/sbin/newlist -q -l ${LIST_LANGUAGE_CODE} mailman ${LIST_ADMIN} ${MASTER_PASSWORD}
 
 # Addaliases and update them:
 #cat << EOA >> /etc/aliases
@@ -133,54 +96,17 @@ rm -f "/var/lib/mailman/Mailman/mm_cfg.pyc"
 #EOA
 #/usr/bin/newaliases
 
-#cho -n "Setting up Apache web server..."
-{
-	a2enmod cgi
-	a2ensite mailman.conf
-} &>$outfile
+# TAKES WAY TOO LONG! If necessary, run this interactively via shell
+#/usr/lib/mailman/bin/check_perms -f
 
-echo -n "Setting up RSA keys for DKIM..."
-{
-	if [ ! -f /etc/exim4/tls.d/private.pem ]; then
-		mkdir -p /etc/exim4/tls.d
-		openssl genrsa -out /etc/exim4/tls.d/private.pem 2048 -outform PEM
-		openssl rsa -in /etc/exim4/tls.d/private.pem -out /etc/exim4/tls.d/public.pem -pubout -outform PEM
-	fi
-	chgrp -R Debian-exim /etc/exim4
-} &>$outfile
-echo ' Done.'
 
-key=$(sed -e '/^-/d' /etc/exim4/tls.d/public.pem|paste -sd '' -)
-ts=$(date +%Y%m%d)
+echo "Setting up Apache web server..."
+a2enmod cgi
+a2ensite mailman.conf
 
-echo -n "Fixing permissons and finishing setup..."
-{
-	update-exim4.conf
-	#/usr/lib/mailman/bin/check_perms -f
-} &>$outfile
-echo ' Done.'
+echo "Starting up services..."
+/etc/init.d/mailman start
+/etc/init.d/exim4 start
 
-echo -n "Starting up services..."
-{
-	/etc/init.d/exim4 start
-	/etc/init.d/mailman start
-} &>$outfile
-echo ' Done.'
-
-cat << EOB
-
-    ***********************************************
-    *                                             *
-    *   TO COMPLETE DKIM SETUP, COPY THE          *
-    *   FOLLOWING CODE INTO A NEW TXT RECORD      *
-    *   IN YOUR DNS SERVER:                       *
-    *                                             *
-    ***********************************************
-
-EOB
-echo "${ts}._domainkey.${EMAIL_FQDN} IN TXT \"k=rsa; p=$key\""
-echo
-echo
-echo '------------- CONTAINER UP AND RUNNING! -------------'
-
+echo "Starting up apache..."
 apachectl -DFOREGROUND -k start
