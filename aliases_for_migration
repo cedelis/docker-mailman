@@ -3,5 +3,5 @@
 #comment: rt-comment
 
 # When we want to temporarily just store incoming RT ticket email (during migration when it's offline)
-#support: root, rtstore-correspond
-#comment: root, rtstore-comment
+#support: rtstore-correspond
+#comment: rtstore-comment
