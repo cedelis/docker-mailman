@@ -31,8 +31,10 @@ COPY 04_exim4-config_rt /etc/exim4/conf.d/main/
 COPY 30_exim4-config_auth /etc/exim4/conf.d/auth/
 COPY 40_exim4-config_mailman /etc/exim4/conf.d/transport/
 COPY 40_exim4-config_rt /etc/exim4/conf.d/transport/
+COPY 40_exim4-config_rtstore /etc/exim4/conf.d/transport/
 COPY 101_exim4-config_mailman /etc/exim4/conf.d/router/
 COPY 101_exim4-config_rt /etc/exim4/conf.d/router/
+COPY 101_exim4-config_rtstore /etc/exim4/conf.d/router/
 
 COPY mailman.conf /etc/apache2/sites-available/
 COPY etc_initd_mailman /etc/init.d/mailman
@@ -41,15 +43,18 @@ COPY exim4-config.cfg /
 COPY mailman-config.cfg /
 COPY exim-adduser /
 COPY run.sh /
-COPY rt-mailgate /usr/local/bin/
 COPY set-exim4-update-conf /
+COPY aliases_for_migration /
+COPY rt-mailgate /usr/local/bin/
+COPY rt-mailstore /usr/local/bin/
 COPY flush_queue /usr/local/bin/
 COPY delete_all_queue /usr/local/bin/
 
 RUN chmod +x /run.sh
+RUN chmod +x /set-exim4-update-conf
 RUN chmod +x /etc/init.d/mailman
 RUN chmod +x /usr/local/bin/rt-mailgate
-RUN chmod +x /set-exim4-update-conf
+RUN chmod +x /usr/local/bin/rt-mailstore
 RUN chmod +x /usr/local/bin/flush_queue
 RUN chmod +x /usr/local/bin/delete_all_queue
 

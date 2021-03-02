@@ -1,0 +1,6 @@
+rt3_store:
+  driver = pipe
+  command = /usr/local/bin/rt-mailstore \
+    --action $local_part_suffix \
+    --queue " Support at CARLI" \
+    --url RT3_URL

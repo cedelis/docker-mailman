@@ -1,0 +1,8 @@
+rt3store_router:
+   driver = accept
+   domains = +rt_domains
+
+   local_part_prefix = rtstore-
+   local_part_suffix = *
+
+   transport = rt3_store
