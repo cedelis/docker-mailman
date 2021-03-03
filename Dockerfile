@@ -38,6 +38,7 @@ COPY 101_exim4-config_rtstore /etc/exim4/conf.d/router/
 
 COPY mailman.conf /etc/apache2/sites-available/
 COPY etc_initd_mailman /etc/init.d/mailman
+COPY set_from_is_list.py /var/lib/mailman/bin/
 
 COPY exim4-config.cfg /
 COPY mailman-config.cfg /

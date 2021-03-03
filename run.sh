@@ -63,11 +63,14 @@ echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
 echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
 echo 'OWNERS_CAN_DELETE_THEIR_OWN_LISTS = Yes' >> $mailmancfg
 
-# Outgoing mail Cloud emailer
+# Outgoing mail Cloud mailer
 echo "SMTP_AUTH = ${SMTP_AUTH}" >> $mailmancfg
 echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg 
 echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
 echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
+
+# set from_is_list to "Munge From" so that DMARC satisfied for Cloud mailer
+echo "DEFAULT_FROM_IS_LIST = 1" >> $mailmancfg
 
 debconf-set-selections /mailman-config.cfg
 dpkg-reconfigure mailman
