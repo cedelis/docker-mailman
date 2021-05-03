@@ -4,3 +4,4 @@ DKIM_DOMAIN = lists.example.com
 DKIM_FILE = /etc/exim4/tls.d/private.pem
 MAIN_TLS_ENABLE = yes
 smtp_active_hostname = lists.example.com
+smtp_banner = banner.example.com
