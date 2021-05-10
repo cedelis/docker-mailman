@@ -46,6 +46,7 @@ COPY exim-adduser /
 COPY run.sh /
 COPY set-exim4-update-conf /
 COPY aliases_for_migration /
+COPY process_deferred.sh /
 COPY rt-mailgate /usr/local/bin/
 COPY rt-mailstore /usr/local/bin/
 COPY flush_queue /usr/local/bin/

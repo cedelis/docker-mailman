@@ -14,7 +14,7 @@ MM_GID=list
 #
 # Domains that your lists are in - colon separated list
 # you may wish to add these into local_domains as well
-domainlist mm_domains=lists.example.com
+domainlist mm_domains=domains.example.com
 #
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #

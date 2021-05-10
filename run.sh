@@ -19,6 +19,7 @@ SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
 SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
 SMTP_USER=`cat /mailman-env/SMTP_USER`
 SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+EXIM4_DOMAINS=`cat /mailman-env/EXIM4_DOMAINS`
 EXIM4_SMTP_BANNER=`cat /mailman-env/EXIM4_SMTP_BANNER`
 EXIM4_SMARTHOST=`cat /mailman-env/EXIM4_SMARTHOST`
 EXIM4_OTHER_HOSTNAMES=`cat /mailman-env/EXIM4_OTHER_HOSTNAMES`
@@ -46,8 +47,8 @@ mailmancfg='/etc/mailman/mm_cfg.py'
 # Replace default hostnames with runtime values:
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/00_local_macros
 /bin/sed -i "s/banner\.example\.com/${EXIM4_SMTP_BANNER}/" /etc/exim4/conf.d/main/00_local_macros
-/bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/04_exim4-config_mailman
-/bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/04_exim4-config_rt
+/bin/sed -i "s/domains\.example\.com/${EXIM4_DOMAINS}/" /etc/exim4/conf.d/main/04_exim4-config_mailman
+/bin/sed -i "s/domains\.example\.com/${EXIM4_DOMAINS}/" /etc/exim4/conf.d/main/04_exim4-config_rt
 /bin/sed -i "s/lists\.example\.com/${URL_FQDN}/" /etc/apache2/sites-available/mailman.conf
 /bin/sed -i "s/DEFAULT_EMAIL_HOST.*\=.*/DEFAULT_EMAIL_HOST\ \=\ \'${EMAIL_FQDN}\'/" $mailmancfg
 /bin/sed -i "s/DEFAULT_URL_HOST.*\=.*/DEFAULT_URL_HOST\ \=\ \'${URL_FQDN}\'/" $mailmancfg
