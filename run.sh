@@ -13,12 +13,14 @@ EMAIL_FQDN=`cat /mailman-env/EMAIL_FQDN`
 MASTER_PASSWORD=`cat /mailman-env/MASTER_PASSWORD`
 LIST_ADMIN=`cat /mailman-env/LIST_ADMIN`
 DEBUG_CONTAINER=`cat /mailman-env/DEBUG_CONTAINER`
+LIST_LANGUAGE_CODE=en
 SMTPHOST=`cat /mailman-env/SMTPHOST`
 SMTPPORT=`cat /mailman-env/SMTPPORT`
 SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
 SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
 SMTP_USER=`cat /mailman-env/SMTP_USER`
 SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+EXIM4_CONFIG_TYPE=`cat /mailman-env/EXIM4_CONFIG_TYPE`
 EXIM4_DOMAINS=`cat /mailman-env/EXIM4_DOMAINS`
 EXIM4_SMTP_BANNER=`cat /mailman-env/EXIM4_SMTP_BANNER`
 EXIM4_SMARTHOST=`cat /mailman-env/EXIM4_SMARTHOST`
@@ -31,9 +33,12 @@ opts=(
   dc_other_hostnames "${EXIM4_OTHER_HOSTNAMES}"
   dc_relay_nets ''
   dc_use_split_config 'true'
-  dc_eximconfig_configtype 'smarthost'
-  dc_smarthost "${SMTPHOST}::${SMTPPORT}"
+  dc_eximconfig_configtype "${EXIM4_CONFIG_TYPE}"
 )
+if [ $EXIM4_CONFIG_TYPE == 'smarthost' ]; then
+  opts+=(dc_smarthost "${SMTPHOST}::${SMTPPORT}")
+fi
+
 /set-exim4-update-conf "${opts[@]}"
 echo "mailname='${EMAIL_FQDN}'" >> /etc/exim4/update-exim4.conf.conf
 
@@ -59,18 +64,22 @@ mailmancfg='/etc/mailman/mm_cfg.py'
 
 # Add some directives to Mailman config:
 echo "MTA = None" >> $mailmancfg
-echo 'DELIVERY_MODULE = "SMTPDirect"' >> $mailmancfg
 echo 'SMTP_MAX_RCPTS = 500' >> $mailmancfg
 echo 'MAX_DELIVERY_THREADS = 0' >> $mailmancfg
-echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
-echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
+if [ $EXIM4_CONFIG_TYPE == 'smarthost' ]; then
+  echo 'DELIVERY_MODULE = "SMTPDirect"' >> $mailmancfg
+  echo "SMTPHOST = \"${SMTPHOST}\"" >> $mailmancfg
+  echo "SMTPPORT = ${SMTPPORT}" >> $mailmancfg
+fi
 echo 'OWNERS_CAN_DELETE_THEIR_OWN_LISTS = Yes' >> $mailmancfg
 
 # Outgoing mail Cloud mailer
-echo "SMTP_AUTH = ${SMTP_AUTH}" >> $mailmancfg
-echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg 
-echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
-echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
+if [ $EXIM4_CONFIG_TYPE == 'smarthost' ]; then
+  echo "SMTP_AUTH = ${SMTP_AUTH}" >> $mailmancfg
+  echo "SMTP_USE_TLS = ${SMTP_USE_TLS}" >> $mailmancfg 
+  echo "SMTP_USER = \"${SMTP_USER}\"" >> $mailmancfg
+  echo "SMTP_PASSWD = \"${SMTP_PASSWD}\"" >> $mailmancfg
+fi
 
 # set from_is_list to "Munge From" so that DMARC satisfied for Cloud mailer
 echo "DEFAULT_FROM_IS_LIST = 1" >> $mailmancfg
