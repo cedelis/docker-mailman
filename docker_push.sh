@@ -1,1 +1,1 @@
-docker push cedelis/mailman:0.3
+docker push cedelis/mailman:0.4

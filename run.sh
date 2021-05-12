@@ -20,12 +20,40 @@ SMTP_AUTH=`cat /mailman-env/SMTP_AUTH`
 SMTP_USE_TLS=`cat /mailman-env/SMTP_USE_TLS`
 SMTP_USER=`cat /mailman-env/SMTP_USER`
 SMTP_PASSWD=`cat /mailman-env/SMTP_PASSWD`
+EXIM4_DKIM_ENABLED=`cat /mailman-env/EXIM4_DKIM_ENABLED`
+EXIM4_DKIM_SELECTOR=`cat /mailman-env/EXIM4_DKIM_SELECTOR`
 EXIM4_CONFIG_TYPE=`cat /mailman-env/EXIM4_CONFIG_TYPE`
 EXIM4_DOMAINS=`cat /mailman-env/EXIM4_DOMAINS`
 EXIM4_SMTP_BANNER=`cat /mailman-env/EXIM4_SMTP_BANNER`
 EXIM4_SMARTHOST=`cat /mailman-env/EXIM4_SMARTHOST`
 EXIM4_OTHER_HOSTNAMES=`cat /mailman-env/EXIM4_OTHER_HOSTNAMES`
 EXIM4_LOCAL_INTERFACES=`cat /mailman-env/EXIM4_LOCAL_INTERFACES`
+
+if [ $DEBUG_CONTAINER == 'true' ]; then
+       outfile='/dev/console'
+else
+       outfile='/dev/null'
+fi
+
+if [ $EXIM4_DKIM_ENABLED == 'true' ]; then
+    echo -n "Setting up RSA keys for DKIM..."
+    {
+       if [ ! -d /etc/exim4/tls.d ]; then
+               mkdir -p /etc/exim4/tls.d
+       fi
+       if [ ! -f /etc/exim4/tls.d/private.pem ]; then
+               openssl genrsa -out /etc/exim4/tls.d/private.pem 1024
+               openssl rsa -in /etc/exim4/tls.d/private.pem -out /etc/exim4/tls.d/public.pem -pubout -outform PEM
+               chgrp -R Debian-exim /etc/exim4/tls.d # necessary so exim can read private key
+               chmod g+r /etc/exim4/tls.d/private.pem 
+       fi
+
+    } &>$outfile
+    echo ' Done.'
+fi
+
+key=$(sed -e '/^-/d' /etc/exim4/tls.d/public.pem|paste -sd '' -)
+ts=$(date +%Y%m%d)
 
 # Set debconf values and reconfigure Exim and Mailman. For some reason, dpkg-reconfigure exim4-config does not seem to work.
 opts=(
@@ -49,6 +77,16 @@ update-exim4.conf
 
 echo "Setting up Mailman..."
 mailmancfg='/etc/mailman/mm_cfg.py'
+
+if [ $EXIM4_DKIM_ENABLED == 'true' ]; then
+  cat << EOD >> /etc/exim4/conf.d/main/00_local_macros
+DKIM_CANON = relaxed
+DKIM_SELECTOR = ${EXIM4_DKIM_SELECTOR}
+DKIM_DOMAIN = ${EMAIL_FQDN}
+DKIM_PRIVATE_KEY = /etc/exim4/tls.d/private.pem
+EOD
+fi
+
 # Replace default hostnames with runtime values:
 /bin/sed -i "s/lists\.example\.com/${EMAIL_FQDN}/" /etc/exim4/conf.d/main/00_local_macros
 /bin/sed -i "s/banner\.example\.com/${EXIM4_SMTP_BANNER}/" /etc/exim4/conf.d/main/00_local_macros
@@ -121,6 +159,24 @@ a2ensite mailman.conf
 echo "Starting up services..."
 /etc/init.d/mailman start
 /etc/init.d/exim4 start
+
+
+cat << EOB
+
+    ***********************************************
+    *                                             *
+    *   TO COMPLETE DKIM SETUP, COPY THE          *
+    *   FOLLOWING CODE INTO A NEW TXT RECORD      *
+    *   IN YOUR DNS SERVER:                       *
+    *                                             *
+    ***********************************************
+
+EOB
+echo "${ts}._domainkey.${EMAIL_FQDN} IN TXT \"v=DKIM1; k=rsa; p=$key\""
+echo
+echo
+echo '------------- CONTAINER UP AND RUNNING! -------------'
+
 
 echo "Starting up apache..."
 apachectl -DFOREGROUND -k start
