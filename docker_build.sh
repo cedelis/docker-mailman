@@ -1,1 +1,1 @@
-docker build . -t cedelis/mailman:0.2
+docker build . -t cedelis/mailman:0.3
